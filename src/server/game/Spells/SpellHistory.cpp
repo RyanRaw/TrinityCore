@@ -254,6 +254,9 @@ void SpellHistory::HandleCooldowns(SpellInfo const* spellInfo, uint32 itemId, Sp
     if (ConsumeCharge(spellInfo->ChargeCategoryId))
         return;
 
+    if (_owner->HasAuraTypeWithAffectMask(SPELL_AURA_IGNORE_SPELL_COOLDOWN, spellInfo))
+        return;
+
     if (Player* player = _owner->ToPlayer())
     {
         // potions start cooldown until exiting combat
@@ -275,7 +278,7 @@ void SpellHistory::HandleCooldowns(SpellInfo const* spellInfo, uint32 itemId, Sp
 
 bool SpellHistory::IsReady(SpellInfo const* spellInfo, uint32 itemId /*= 0*/) const
 {
-    if (spellInfo->PreventionType & SPELL_PREVENTION_TYPE_SILENCE)
+    if (!spellInfo->HasAttribute(SPELL_ATTR9_IGNORE_SCHOOL_LOCKOUT) && spellInfo->PreventionType & SPELL_PREVENTION_TYPE_SILENCE)
         if (IsSchoolLocked(spellInfo->GetSchoolMask()))
             return false;
 
@@ -772,6 +775,9 @@ void SpellHistory::LockSpellSchool(SpellSchoolMask schoolMask, Duration lockoutT
             continue;
 
         if (!(spellInfo->PreventionType & SPELL_PREVENTION_TYPE_SILENCE))
+            continue;
+
+        if (spellInfo->HasAttribute(SPELL_ATTR9_IGNORE_SCHOOL_LOCKOUT))
             continue;
 
         if (!(schoolMask & spellInfo->GetSchoolMask()))
